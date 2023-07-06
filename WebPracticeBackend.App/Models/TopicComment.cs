@@ -1,9 +1,10 @@
-﻿namespace WebPracticeBackend.App.Models; 
+﻿namespace WebPracticeBackend.App.Models;
 
 public class TopicComment {
-	public int Id { get; set; }
-	public int TopicId { get; set; }
-	public Topic topic { get; set; }
+	public string Id { get; set; }
+	public string TopicId { get; set; }
+	public Topic Topic { get; set; }
 	public string Content { get; set; }
-	public int CreatorId { get; set; }
+	public string UserId { get; set; }
+	public User User { get; set; }
 }
