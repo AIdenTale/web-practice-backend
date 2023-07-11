@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebPracticeBackend.App.Data;
 using WebPracticeBackend.App.Models;
 using WebPracticeBackend.App.Requests;
@@ -22,7 +23,8 @@ public class TopicController : ControllerBase {
 
 
 	[HttpGet("{id}")]
-	public async Task<IActionResult> GetTopic(string id) {
+	[Route("GetTopic/{id}")]
+    public async Task<IActionResult> GetTopic(string id) {
 		var result = await _context.Topics.FindAsync(id);
 		return result == null ? NotFound() : new OkObjectResult(result);
 	}
@@ -33,30 +35,63 @@ public class TopicController : ControllerBase {
 	}
 
 	[HttpGet("all")]
-	public void GetAllTopics([FromBody] string value) {
+	public async Task<ActionResult<IEnumerable<Topic>>> GetAllTopics()
+	{
+		var topics = await _context.Topics.ToListAsync();
+		return Ok(topics);
 	}
 
-	[HttpPut("{id}")]
-	public void UpdateTopic(string id, [FromBody] string value) {
+    [HttpPut("{id}")]
+	public async Task<ActionResult> UpdateTopic(string id, [FromBody] string value)
+	{
+		var topic = await _context.Topics.SingleOrDefaultAsync(t => t.Id == id);
+
+		if (topic == null)
+		{
+			return NotFound(new { Message = $"Topic with id {id} not found." });
+		}
+		
+		topic.Title = value;
+		topic.Description = value;
+		_context.Topics.Update(topic);
+		await _context.SaveChangesAsync();
+
+		return NoContent();
 	}
 
-	[HttpDelete("{id}")]
-	public void DeleteTopic(string id) {
+    [HttpDelete("{id}")]
+	public async Task<ActionResult> DeleteTopic(string id)
+	{
+		var topic = _context.Topics.SingleOrDefault(t => t.Id == id);
+
+		if (topic == null)
+		{
+			return NotFound();
+		}
+
+		_context.Topics.Remove(topic);
+		await _context.SaveChangesAsync();
+
+		return NoContent();
 	}
 
 
-	[HttpGet("{topicId}/comment/all")]
-	public void GetAllComments([FromBody] string value) {
+    [HttpGet("{topicId}/comment/all")]
+	public async Task<ActionResult<IEnumerable<TopicComment>>> GetAllComments(string topicId)
+	{
+		var comments = await _context.TopicComments.Where(c => c.TopicId == topicId).ToListAsync();
+		return Ok(comments);
 	}
 
-	[HttpGet("{topicId}/comment/{id}")]
+    [HttpGet("{topicId}/comment/{id}")]
 	public async Task<IActionResult> GetComment(string topicId, string id) {
 		var result = await _context.TopicComments.FindAsync(id);
 		return result == null ? NotFound() : new OkObjectResult(result);
 	}
 
-	[HttpPost("{topicId}/comment/create")]
-	public async Task<ActionResult> CreateComment(string topicId, [FromBody] CreateTopicCommentRequest comment) {
+	[HttpPost]
+	[Route("{topicId}/comment/create")]
+    public async Task<ActionResult> Post(string topicId, [FromBody] CreateTopicCommentRequest comment) {
 		var user = _userManager.FindByNameAsync(User.Identity?.Name);
 
         /*var item = new TopicComment {
@@ -75,10 +110,23 @@ public class TopicController : ControllerBase {
 	}
 
 	[HttpPut("{topicId}/comment/{id}")]
-	public void UpdateComment(string topicId, [FromBody] string value, string id) {
+	public async Task<ActionResult> UpdateComment(string topicId, string id, [FromBody] string value)
+	{
+		var comment = await _context.TopicComments.SingleOrDefaultAsync(c => c.Id == id && c.TopicId == topicId);
+
+		if (comment == null)
+		{
+			return NotFound(new { Message = $"Comment with id {id} not found in topic {topicId}." });
+		}
+		
+		comment.Content = value;
+		_context.TopicComments.Update(comment);
+		await _context.SaveChangesAsync();
+
+        return NoContent();
 	}
 
-	[HttpDelete("{topicId}/comment/{id}")]
+    [HttpDelete("{topicId}/comment/{id}")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult> DeleteComment(string topicId, string id) {
