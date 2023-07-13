@@ -5,7 +5,21 @@ using Microsoft.EntityFrameworkCore;
 using WebPracticeBackend.App.Data;
 using WebPracticeBackend.App.Models;
 
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy(name: MyAllowSpecificOrigins,
+		policy =>
+		{
+			policy.WithOrigins("https://localhost:7270",
+                "https://localhost:44400")
+				.AllowAnyHeader()
+				.AllowAnyMethod();
+		});
+});
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -21,6 +35,8 @@ builder.Services.AddIdentityServer()
 
 builder.Services.AddAuthentication()
     .AddIdentityServerJwt();
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
@@ -44,6 +60,8 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthentication();
 app.UseIdentityServer();

@@ -15,16 +15,32 @@ namespace WebPracticeBackend.App.Data {
 		protected override void OnModelCreating(ModelBuilder modelBuilder) {
 			base.OnModelCreating(modelBuilder);
 
-			modelBuilder.Entity<TopicComment>()
-				.HasOne(comment => comment.Topic)
-				.WithMany(topic => topic.Comments)
-				.HasForeignKey(comment => comment.TopicId)
-				.OnDelete(DeleteBehavior.Cascade);
 
 			modelBuilder.Entity<Topic>()
+				.HasKey(topic => topic.Id);
+
+			modelBuilder.Entity<Topic>()
+				.Property(e => e.Id)
+				.ValueGeneratedOnAdd();
+
+
+            modelBuilder.Entity<Topic>()
 				.HasOne(topic => topic.User)
 				.WithMany(user => user.Topics)
 				.HasForeignKey(topic => topic.UserId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			modelBuilder.Entity<TopicComment>()
+				.HasKey(comment => comment.Id);
+
+			modelBuilder.Entity<TopicComment>()
+				.Property(c => c.Id)
+				.ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<TopicComment>()
+				.HasOne(comment => comment.Topic)
+				.WithMany(topic => topic.Comments)
+				.HasForeignKey(comment => comment.TopicId)
 				.OnDelete(DeleteBehavior.Cascade);
 
 			modelBuilder.Entity<TopicComment>()
@@ -32,12 +48,7 @@ namespace WebPracticeBackend.App.Data {
 				.WithMany(user => user.TopicComments)
 				.HasForeignKey(comment => comment.UserId)
 				.OnDelete(DeleteBehavior.Cascade);
-
-			modelBuilder.Entity<TopicComment>()
-				.HasKey(comment => comment.Id);
-
-			modelBuilder.Entity<Topic>()
-				.HasKey(topic => topic.Id);
+			
 		}
 	}
 }
